@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SVG Drawing Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      user-select: none;
+    }
+    h1 {
+      text-align: center;
+    }
+    #drawing-area {
+      border: 2px solid #333;
+      background-color: #fafafa;
+      cursor: crosshair;
+      display: block;
+      margin: 20px auto;
+      width: 100%;
+      height: 500px;
+      touch-action: none;
+    }
+    button {
+      display: block;
+      margin: 0 auto 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    svg rect {
+      fill: rgba(0, 150, 255, 0.5);
+      stroke: #007acc;
+      stroke-width: 2;
+    }
+  </style>
+</head>
+<body>
+  <h1>SVG Drawing Tool (Draw Rectangles)</h1>
+  <button id="clear-btn">Clear Canvas</button>
+  <svg id="drawing-area" width="100%" height="500"></svg>
+
+  <script>
+    const svg = document.getElementById('drawing-area');
+    const clearBtn = document.getElementById('clear-btn');
+
+    let isDrawing = false;
+    let startX = 0;
+    let startY = 0;
+    let rect = null;
+
+    // Convert mouse coordinates to SVG coordinates
+    function getSVGCoords(event) {
+      const point = svg.createSVGPoint();
+      point.x = event.clientX;
+      point.y = event.clientY;
+      const svgPoint = point.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: svgPoint.x, y: svgPoint.y };
+    }
+
+    svg.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      const coords = getSVGCoords(e);
+      startX = coords.x;
+      startY = coords.y;
+
+      // Create a new rect element
+      rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', startX);
+      rect.setAttribute('y', startY);
+      rect.setAttribute('width', 0);
+      rect.setAttribute('height', 0);
+      svg.appendChild(rect);
+    });
+
+    svg.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const coords = getSVGCoords(e);
+
+      let x = Math.min(coords.x, startX);
+      let y = Math.min(coords.y, startY);
+      let width = Math.abs(coords.x - startX);
+      let height = Math.abs(coords.y - startY);
+
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', width);
+      rect.setAttribute('height', height);
+    });
+
+    svg.addEventListener('mouseup', () => {
+      if (!isDrawing) return;
+      isDrawing = false;
+
+      // If the rectangle has no size, remove it
+      if (rect.getAttribute('width') == 0 || rect.getAttribute('height') == 0) {
+        svg.removeChild(rect);
+      }
+      rect = null;
+    });
+
+    // Optional: Cancel drawing if mouse leaves the SVG area while drawing
+    svg.addEventListener('mouseleave', () => {
+      if (isDrawing && rect) {
+        svg.removeChild(rect);
+        isDrawing = false;
+        rect = null;
+      }
+    });
+
+    // Clear canvas button
+    clearBtn.addEventListener('click', () => {
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+    });
+  </script>
+</body>
+</html>
